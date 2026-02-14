@@ -2,6 +2,18 @@
 
 基于 Stable Diffusion XL 的 macOS 桌面应用，支持通过文字描述生成图片。
 
+## 文件说明
+
+| 文件 | 说明 | 下载链接 |
+|------|------|----------|
+| `demo001.png` | 应用演示截图 | - |
+| `CreatingImage-macos-intel.pkg` | Intel 芯片 Mac 安装包 | [下载](https://github.com/eraft-io/CreatingImage/releases/download/v1.0.0/CreatingImage-macos-intel.pkg) |
+| `CreatingImage-macos-arm64.pkg` | M 芯片 (M1/M2/M3) Mac 安装包 | [下载](https://github.com/eraft-io/CreatingImage/releases/download/v1.0.0/CreatingImage-macos-arm64.pkg) |
+
+**请根据您的 Mac 芯片类型选择对应的安装包：**
+- **Intel 芯片 Mac** → [下载 CreatingImage-macos-intel.pkg](https://github.com/eraft-io/CreatingImage/releases/download/v1.0.0/CreatingImage-macos-intel.pkg)
+- **M1/M2/M3 芯片 Mac** → [下载 CreatingImage-macos-arm64.pkg](https://github.com/eraft-io/CreatingImage/releases/download/v1.0.0/CreatingImage-macos-arm64.pkg)
+
 ## 系统要求
 
 - **macOS 版本**: 11.0 (Big Sur) 或更高版本
@@ -14,28 +26,28 @@
 
 ### 1. 下载应用
 
-下载 `wails-image-app-macos.zip` 文件到你的 Mac。
+下载 `CreatingImage-macos.zip` 文件到你的 Mac。
 
 ### 2. 解压应用
 
 **方法 A - 双击解压（推荐）:**
 ```
-双击 wails-image-app-macos.zip 文件
+双击 CreatingImage-macos.zip 文件
 系统会自动解压到同一目录
 ```
 
 **方法 B - 终端命令:**
 ```bash
 cd ~/Downloads
-unzip wails-image-app-macos.zip
+unzip CreatingImage-macos.zip
 ```
 
 ### 3. 安装到 Applications 文件夹
 
-将解压后的 `wails-image-app.app` 拖到 **Applications（应用程序）** 文件夹：
+将解压后的 `CreatingImage.app` 拖到 **Applications（应用程序）** 文件夹：
 
 ```bash
-mv ~/Downloads/wails-image-app.app /Applications/
+mv ~/Downloads/CreatingImage.app /Applications/
 ```
 
 或者通过 Finder 手动拖动。
@@ -47,7 +59,7 @@ mv ~/Downloads/wails-image-app.app /Applications/
 **在终端执行以下命令：**
 
 ```bash
-sudo xattr -rd com.apple.quarantine /Applications/wails-image-app.app
+sudo xattr -rd com.apple.quarantine /Applications/CreatingImage.app
 ```
 
 输入你的 Mac 密码（输入时不会显示），按回车确认。
@@ -61,37 +73,32 @@ sudo xattr -rd com.apple.quarantine /Applications/wails-image-app.app
 
 **方法 A - 从启动台启动:**
 - 打开启动台（Launchpad）
-- 找到 "wails-image-app" 图标
+- 找到 "CreatingImage" 图标
 - 点击打开
 
 **方法 B - 从 Applications 文件夹启动:**
 - 打开 Finder
 - 进入 Applications 文件夹
-- 双击 "wails-image-app"
+- 双击 "CreatingImage"
 
 **方法 C - 终端启动（调试用）:**
 ```bash
-/Applications/wails-image-app.app/Contents/MacOS/wails-image-app
+/Applications/CreatingImage.app/Contents/MacOS/CreatingImage
 ```
 
 ### 6. 首次启动配置（约 10-30 分钟）
 
-首次启动时，应用会自动进行以下配置：
+**好消息：此版本已预装 Python 依赖，无需等待安装！**
 
-1. **创建 Python 虚拟环境** (1-2 分钟)
-   - 在日志区域显示进度
-   - 无需手动操作
+首次启动时，应用只需：
 
-2. **安装 Python 依赖** (3-5 分钟)
-   - 安装 torch、transformers、diffusers 等库
-   - 可以在日志区域查看详细进度
-
-3. **下载 AI 模型** (10-30 分钟，取决于网速)
+1. **下载 AI 模型** (10-30 分钟，取决于网速)
    - 自动从 modelscope 下载 Stable Diffusion XL 模型
    - 模型大小约 5-10GB
    - 下载完成后会保存在本地，下次无需重复下载
+   - 可以在日志区域查看下载进度
 
-**注意：** 配置过程中请保持网络连接，耐心等待。可以在应用界面的日志区域查看实时进度。
+**注意：** 配置过程中请保持网络连接，耐心等待。模型只需下载一次。
 
 ## 使用方法
 
@@ -120,7 +127,7 @@ sudo xattr -rd com.apple.quarantine /Applications/wails-image-app.app
 
 **A:** 按照安装步骤第 4 步，执行解除隔离属性命令：
 ```bash
-sudo xattr -rd com.apple.quarantine /Applications/wails-image-app.app
+sudo xattr -rd com.apple.quarantine /Applications/CreatingImage.app
 ```
 
 ### Q: 应用闪退或打不开
@@ -131,14 +138,15 @@ sudo xattr -rd com.apple.quarantine /Applications/wails-image-app.app
 2. 检查 macOS 版本是否 >= 11.0
 3. 尝试从终端启动查看错误信息：
    ```bash
-   /Applications/wails-image-app.app/Contents/MacOS/wails-image-app
+   /Applications/CreatingImage.app/Contents/MacOS/CreatingImage
    ```
 
 ### Q: 首次启动卡住很久
 
-**A:** 这是正常现象。应用正在：
-- 安装 Python 依赖（约 3-5 分钟）
-- 下载 AI 模型（约 10-30 分钟）
+**A:** 这是正常现象。应用正在下载 AI 模型（约 5-10GB）：
+- 下载时间取决于网速（约 10-30 分钟）
+- 可以在日志区域查看下载进度
+- 模型只需下载一次，下次启动直接使用
 
 请在日志区域查看进度，不要关闭应用。
 
@@ -149,7 +157,7 @@ sudo xattr -rd com.apple.quarantine /Applications/wails-image-app.app
 1. **模型下载不完整**
    - 删除模型缓存重新下载：
    ```bash
-   rm -rf ~/.cache/wails-image-app/models
+   rm -rf ~/.cache/CreatingImage/models
    ```
    - 重启应用重新下载
 
@@ -160,7 +168,7 @@ sudo xattr -rd com.apple.quarantine /Applications/wails-image-app.app
 3. **Python 环境问题**
    - 删除虚拟环境重新配置：
    ```bash
-   rm -rf /tmp/wails-image-app
+   rm -rf /tmp/CreatingImage
    ```
    - 重启应用
 
@@ -176,9 +184,9 @@ sudo xattr -rd com.apple.quarantine /Applications/wails-image-app.app
 
 **A:** 直接删除应用即可：
 ```bash
-rm -rf /Applications/wails-image-app.app
-rm -rf ~/.cache/wails-image-app
-rm -rf /tmp/wails-image-app
+rm -rf /Applications/CreatingImage.app
+rm -rf ~/.cache/CreatingImage
+rm -rf /tmp/CreatingImage
 ```
 
 ## 技术说明
@@ -191,10 +199,10 @@ rm -rf /tmp/wails-image-app
 
 ## 文件位置
 
-- **应用**: `/Applications/wails-image-app.app`
-- **模型缓存**: `~/.cache/wails-image-app/models/`
-- **Python 环境**: `/tmp/wails-image-app/python/venv/`
-- **生成的图片**: `/tmp/wails-image-app/generated_*.png`
+- **应用**: `/Applications/CreatingImage.app`
+- **模型缓存**: `~/.cache/CreatingImage/models/`
+- **Python 环境**: `/tmp/CreatingImage/python/venv/`
+- **生成的图片**: `/tmp/CreatingImage/generated_*.png`
 
 ## 更新日志
 
@@ -218,3 +226,9 @@ Stable Diffusion XL 模型遵循其原始许可证。
 ---
 
 **注意**: 首次启动需要较长时间进行环境配置，请耐心等待。
+
+### debug
+
+```
+open /Users/jieliu/Desktop/CreatingImage/wails-image-app/build/bin/CreatingImage.app
+```
