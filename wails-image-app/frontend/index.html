@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>CreatingImage</title>
+</head>
+<body>
+<div id="app">
+    <div class="container">
+        <h1 class="title">CreatingImage</h1>
+        <p class="subtitle">AI 图片生成器 - 基于 Stable Diffusion XL</p>
+        
+        <div id="env-status" class="env-status hidden">
+            <div class="status-indicator"></div>
+            <span id="status-text">准备中...</span>
+        </div>
+
+        <div id="install-log" class="install-log hidden">
+            <div class="log-header">
+                <span>安装日志</span>
+                <button class="toggle-log" onclick="toggleLog()">收起</button>
+            </div>
+            <div id="log-content" class="log-content"></div>
+        </div>
+
+        <div class="input-section">
+            <textarea 
+                id="prompt-input" 
+                class="prompt-input" 
+                placeholder="请输入图片描述，例如：一只坐在云朵上的猫，8k，超写实风格..."
+                rows="3"
+            ></textarea>
+            <button id="generate-btn" class="generate-btn" onclick="generateImage()" disabled>
+                环境准备中...
+            </button>
+        </div>
+
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>正在生成图片，请稍候...</p>
+        </div>
+
+        <div id="result" class="result hidden">
+            <img id="generated-image" class="generated-image" alt="生成的图片"/>
+            <p id="result-message" class="result-message"></p>
+            <div class="button-group">
+                <button id="save-btn" class="save-btn" onclick="saveToDesktop()">
+                    另存到桌面
+                </button>
+            </div>
+        </div>
+
+        <div id="error" class="error hidden">
+            <p id="error-message"></p>
+        </div>
+    </div>
+</div>
+<script src="./src/main.js" type="module"></script>
+</body>
+</html>
