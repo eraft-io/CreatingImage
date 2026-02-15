@@ -9,5 +9,12 @@
   "author": {
     "name": "",
     "email": ""
+  },
+  "Info": {
+    "companyName": "CreatingImage",
+    "productName": "CreatingImage",
+    "productVersion": "1.0.0",
+    "copyright": "Copyright © 2024",
+    "comments": "AI Image Generator"
   }
 }

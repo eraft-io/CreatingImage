@@ -12,6 +12,18 @@ echo "=========================================="
 echo "构建 Windows 版本"
 echo "=========================================="
 
+# 生成 Windows 图标
+if [ -f "imgs/logo.png" ]; then
+    if [ ! -f "create_ico.sh" ]; then
+        echo "警告: 找不到 create_ico.sh 脚本"
+    else
+        echo "[0/4] 生成 Windows 图标..."
+        ./create_ico.sh || echo "警告: 图标生成失败，将使用默认图标"
+    fi
+else
+    echo "警告: 找不到 imgs/logo.png，将使用默认图标"
+fi
+
 # 检查是否安装了 mingw-w64
 if ! command -v x86_64-w64-mingw32-gcc &> /dev/null; then
     echo "警告: 未找到 mingw-w64 交叉编译器"
@@ -30,7 +42,7 @@ export PATH=$PATH:$(go env GOPATH)/bin
 # 清理
 go clean -cache 2>/dev/null || true
 
-echo "[1/3] 构建 Windows amd64 版本..."
+echo "[1/4] 构建 Windows amd64 版本..."
 # 设置 Windows 交叉编译环境
 export CGO_ENABLED=1
 export GOOS=windows
@@ -57,7 +69,7 @@ wails build -platform windows/amd64 -o "${APP_NAME}.exe" || {
     exit 1
 }
 
-echo "[2/3] 复制资源文件..."
+echo "[2/4] 复制资源文件..."
 WINDOWS_DIR="${BUILD_DIR}/windows"
 mkdir -p "${WINDOWS_DIR}"
 
@@ -85,7 +97,26 @@ if [ -f "imgs/logo.png" ]; then
     echo "      ✓ logo.png"
 fi
 
-echo "[3/3] 创建 ZIP 压缩包..."
+# 复制 Windows 图标
+if [ -f "build/windows/icon.ico" ]; then
+    cp "build/windows/icon.ico" "${WINDOWS_DIR}/"
+    echo "      ✓ icon.ico"
+fi
+
+echo "[3/4] 验证应用图标..."
+# 检查 exe 是否包含图标
+if command -v wrestool &> /dev/null; then
+    ICON_COUNT=$(wrestool -l "${BUILD_DIR}/${APP_NAME}.exe" 2>/dev/null | grep -c "icon" || echo "0")
+    if [ "$ICON_COUNT" -gt 0 ]; then
+        echo "      ✓ 应用已包含图标 (${ICON_COUNT} 个图标资源)"
+    else
+        echo "      ⚠ 警告: 应用可能未包含图标"
+    fi
+else
+    echo "      ℹ 跳过图标验证（未安装 wrestool）"
+fi
+
+echo "[4/4] 创建 ZIP 压缩包..."
 cd "${BUILD_DIR}"
 zip -r "${APP_NAME}-windows.zip" "windows/"
 ZIP_SIZE=$(du -h "${APP_NAME}-windows.zip" | cut -f1)
