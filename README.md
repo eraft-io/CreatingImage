@@ -61,6 +61,12 @@
 winget install Microsoft.VisualStudio.2022.BuildTools --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools"
 ```
 
-## Demo
+## 应用演示
 
-![](resources/demo001.png)
+### macOS 版本
+
+<img src="resources/demo001.png" width="600" alt="macOS 版本演示">
+
+### Windows 10 版本
+
+<img src="resources/windemo.png" width="600" alt="Windows 10 版本演示">
