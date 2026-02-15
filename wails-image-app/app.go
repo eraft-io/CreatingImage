@@ -236,11 +236,43 @@ func (a *App) setupPythonEnvironment() {
 
 	// 创建虚拟环境
 	a.sendLog("创建 Python 虚拟环境...", "info")
-	cmd := exec.Command(python3Path, "-m", "venv", venvDir)
-	output, err := cmd.CombinedOutput()
+
+	// Windows 上尝试使用 python 或 python3
+	var venvCmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		// 先尝试 python，再尝试 python3
+		venvCmd = exec.Command("python", "-m", "venv", venvDir)
+	} else {
+		venvCmd = exec.Command(python3Path, "-m", "venv", venvDir)
+	}
+
+	output, err := venvCmd.CombinedOutput()
+	if err != nil && runtime.GOOS == "windows" {
+		// Windows 上如果 python 失败，尝试 python3
+		a.sendLog("尝试使用 python3 创建虚拟环境...", "info")
+		venvCmd = exec.Command("python3", "-m", "venv", venvDir)
+		output, err = venvCmd.CombinedOutput()
+	}
+
 	if err != nil {
 		a.sendLog(fmt.Sprintf("创建虚拟环境失败: %v\n%s", err, output), "error")
-		return
+		a.sendLog("尝试使用 virtualenv 创建...", "warning")
+
+		// 尝试使用 virtualenv
+		venvCmd = exec.Command(python3Path, "-m", "pip", "install", "virtualenv")
+		venvCmd.Run()
+
+		if runtime.GOOS == "windows" {
+			venvCmd = exec.Command("python", "-m", "virtualenv", venvDir)
+		} else {
+			venvCmd = exec.Command(python3Path, "-m", "virtualenv", venvDir)
+		}
+		output, err = venvCmd.CombinedOutput()
+
+		if err != nil {
+			a.sendLog(fmt.Sprintf("使用 virtualenv 也失败: %v\n%s", err, output), "error")
+			return
+		}
 	}
 	a.sendLog("虚拟环境创建成功", "info")
 
@@ -301,11 +333,11 @@ func (a *App) setupPythonEnvironment() {
 
 	// 先升级 pip
 	a.sendLog("升级 pip...", "info")
-	cmd = exec.Command(pipCmd, "install", "--upgrade", "pip")
-	output, _ = cmd.CombinedOutput()
+	pipUpgradeCmd := exec.Command(pipCmd, "install", "--upgrade", "pip")
+	pipOutput, _ := pipUpgradeCmd.CombinedOutput()
 	a.sendLog("pip 升级完成", "info")
-	if len(output) > 0 {
-		a.sendLog(string(output), "info")
+	if len(pipOutput) > 0 {
+		a.sendLog(string(pipOutput), "info")
 	}
 
 	// 检测 Windows 是否有 NVIDIA GPU
@@ -331,20 +363,47 @@ func (a *App) setupPythonEnvironment() {
 	if runtime.GOOS == "windows" && useCUDA {
 		// Windows + NVIDIA GPU: 安装 CUDA 版本 PyTorch
 		a.sendLog("[1/8] 安装 PyTorch (CUDA 版本)...", "info")
-		a.sendLog("正在使用国内镜像源加速下载...", "info")
-		// 使用清华镜像源加速下载
-		cmd := exec.Command(pipCmd, "install", "torch==2.2.2", "torchvision==0.17.2",
-			"--index-url", "https://pypi.tuna.tsinghua.edu.cn/simple",
-			"--extra-index-url", "https://download.pytorch.org/whl/cu121",
-			"--trusted-host", "pypi.tuna.tsinghua.edu.cn",
+		a.sendLog("正在从 PyTorch 官方仓库下载 CUDA 版本...", "info")
+		// 从 PyTorch 官方 CUDA 仓库下载，使用实时输出显示进度
+		cmd := exec.Command(pipCmd, "install", "torch==2.2.2+cu121", "torchvision==0.17.2+cu121",
+			"--index-url", "https://download.pytorch.org/whl/cu121",
 			"--trusted-host", "download.pytorch.org")
-		output, err := cmd.CombinedOutput()
+
+		// 获取实时输出
+		stdout, err := cmd.StdoutPipe()
 		if err != nil {
-			a.sendLog(fmt.Sprintf("安装 CUDA 版本 PyTorch 失败: %v\n%s", err, output), "error")
-			a.sendLog("尝试安装 CPU 版本...", "warning")
-			useCUDA = false
+			a.sendLog(fmt.Sprintf("创建输出管道失败: %v", err), "error")
 		} else {
-			a.sendLog("PyTorch (CUDA 版本) 安装成功", "info")
+			stderr, _ := cmd.StderrPipe()
+
+			if err := cmd.Start(); err != nil {
+				a.sendLog(fmt.Sprintf("启动安装失败: %v", err), "error")
+				useCUDA = false
+			} else {
+				// 实时读取 stdout
+				go func() {
+					scanner := bufio.NewScanner(stdout)
+					for scanner.Scan() {
+						a.sendLog(scanner.Text(), "info")
+					}
+				}()
+
+				// 实时读取 stderr
+				go func() {
+					scanner := bufio.NewScanner(stderr)
+					for scanner.Scan() {
+						a.sendLog(scanner.Text(), "warning")
+					}
+				}()
+
+				if err := cmd.Wait(); err != nil {
+					a.sendLog(fmt.Sprintf("安装 CUDA 版本 PyTorch 失败: %v", err), "error")
+					a.sendLog("尝试安装 CPU 版本...", "warning")
+					useCUDA = false
+				} else {
+					a.sendLog("PyTorch (CUDA 版本) 安装成功", "info")
+				}
+			}
 		}
 	}
 
