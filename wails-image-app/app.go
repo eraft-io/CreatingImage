@@ -199,12 +199,24 @@ func (a *App) setupPythonEnvironment() {
 	}
 
 	// 检查应用 bundle 中是否有预装依赖
-	bundleVenvPython := filepath.Join(bundleVenvDir, "bin", "python3")
+	// Windows 使用 Scripts/python.exe，其他平台使用 bin/python3
+	var bundleVenvPython string
+	if runtime.GOOS == "windows" {
+		bundleVenvPython = filepath.Join(bundleVenvDir, "Scripts", "python.exe")
+	} else {
+		bundleVenvPython = filepath.Join(bundleVenvDir, "bin", "python3")
+	}
+
 	bundleSitePackages := ""
 	if _, err := os.Stat(bundleVenvPython); err == nil {
 		a.sendLog("检测到应用内预装依赖", "info")
 		// 查找 bundle 中的 site-packages
-		pattern := filepath.Join(bundleVenvDir, "lib", "python*", "site-packages")
+		var pattern string
+		if runtime.GOOS == "windows" {
+			pattern = filepath.Join(bundleVenvDir, "Lib", "site-packages")
+		} else {
+			pattern = filepath.Join(bundleVenvDir, "lib", "python*", "site-packages")
+		}
 		matches, _ := filepath.Glob(pattern)
 		if len(matches) > 0 {
 			bundleSitePackages = matches[0]
@@ -236,7 +248,12 @@ func (a *App) setupPythonEnvironment() {
 	if bundleSitePackages != "" {
 		a.sendLog("复制预装依赖包...", "info")
 		// 找到新虚拟环境的 site-packages
-		newSitePackagesPattern := filepath.Join(venvDir, "lib", "python*", "site-packages")
+		var newSitePackagesPattern string
+		if runtime.GOOS == "windows" {
+			newSitePackagesPattern = filepath.Join(venvDir, "Lib", "site-packages")
+		} else {
+			newSitePackagesPattern = filepath.Join(venvDir, "lib", "python*", "site-packages")
+		}
 		newMatches, _ := filepath.Glob(newSitePackagesPattern)
 		if len(newMatches) > 0 {
 			newSitePackages := newMatches[0]
@@ -247,8 +264,13 @@ func (a *App) setupPythonEnvironment() {
 				for _, entry := range entries {
 					src := filepath.Join(bundleSitePackages, entry.Name())
 					dst := filepath.Join(newSitePackages, entry.Name())
-					// 使用 cp -R 复制
-					cpCmd := exec.Command("cp", "-R", src, dst)
+					// 根据平台选择复制命令
+					var cpCmd *exec.Cmd
+					if runtime.GOOS == "windows" {
+						cpCmd = exec.Command("xcopy", src, dst, "/E", "/I", "/Q")
+					} else {
+						cpCmd = exec.Command("cp", "-R", src, dst)
+					}
 					if err := cpCmd.Run(); err == nil {
 						copied++
 					}
@@ -269,7 +291,13 @@ func (a *App) setupPythonEnvironment() {
 
 	// 安装依赖
 	a.sendLog("开始安装 Python 依赖（这可能需要几分钟）...", "info")
-	pipCmd := filepath.Join(venvDir, "bin", "pip")
+	// Windows 使用 Scripts/pip.exe，其他平台使用 bin/pip
+	var pipCmd string
+	if runtime.GOOS == "windows" {
+		pipCmd = filepath.Join(venvDir, "Scripts", "pip.exe")
+	} else {
+		pipCmd = filepath.Join(venvDir, "bin", "pip")
+	}
 
 	// 先升级 pip
 	a.sendLog("升级 pip...", "info")
@@ -464,9 +492,24 @@ func (a *App) GenerateImage(prompt string) GenerateImageResult {
 	a.sendLog(fmt.Sprintf("[生成] 使用脚本: %s", scriptPath), "info")
 
 	// 使用虚拟环境的 Python 执行脚本
-	// 设置模型缓存目录为用户主目录下的 .cache
-	homeDir, _ := os.UserHomeDir()
-	cacheDir := filepath.Join(homeDir, ".cache", "CreatingImage", "models")
+	// 设置模型缓存目录
+	var cacheDir string
+	if runtime.GOOS == "windows" {
+		// Windows 使用 AppData/Local
+		appData := os.Getenv("LOCALAPPDATA")
+		if appData == "" {
+			appData = os.Getenv("APPDATA")
+		}
+		if appData == "" {
+			homeDir, _ := os.UserHomeDir()
+			appData = filepath.Join(homeDir, "AppData", "Local")
+		}
+		cacheDir = filepath.Join(appData, "CreatingImage", "models")
+	} else {
+		// macOS/Linux 使用 ~/.cache
+		homeDir, _ := os.UserHomeDir()
+		cacheDir = filepath.Join(homeDir, ".cache", "CreatingImage", "models")
+	}
 	cmd := exec.Command(pythonPath, scriptPath, prompt, "--output", outputFile, "--steps", "20", "--cache-dir", cacheDir)
 
 	// 捕获输出
