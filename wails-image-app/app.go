@@ -333,7 +333,7 @@ func (a *App) setupPythonEnvironment() {
 		a.sendLog("[1/8] 安装 PyTorch (CUDA 版本)...", "info")
 		a.sendLog("正在使用国内镜像源加速下载...", "info")
 		// 使用清华镜像源加速下载
-		cmd := exec.Command(pipCmd, "install", "torch==2.2.2+cu121", "torchvision==0.17.2+cu121",
+		cmd := exec.Command(pipCmd, "install", "torch==2.2.2", "torchvision==0.17.2",
 			"--index-url", "https://pypi.tuna.tsinghua.edu.cn/simple",
 			"--extra-index-url", "https://download.pytorch.org/whl/cu121",
 			"--trusted-host", "pypi.tuna.tsinghua.edu.cn",
