@@ -6,18 +6,14 @@
 
 | 文件 | 说明 | 下载链接 |
 |------|------|----------|
-| `demo001.png` | 应用演示截图 | - |
 | `CreatingImage-macos-intel.pkg` | Intel 芯片 Mac 安装包 | [下载](https://github.com/eraft-io/CreatingImage/releases/download/v1.0.0/CreatingImage-macos-intel.pkg) |
-| `CreatingImage-macos-arm64.pkg` | M 芯片 (M1/M2/M3) Mac 安装包 | [下载](https://github.com/eraft-io/CreatingImage/releases/download/v1.0.0/CreatingImage-macos-arm64.pkg) |
 
-**请根据您的 Mac 芯片类型选择对应的安装包：**
-- **Intel 芯片 Mac** → [下载 CreatingImage-macos-intel.pkg](https://github.com/eraft-io/CreatingImage/releases/download/v1.0.0/CreatingImage-macos-intel.pkg)
 - **M1/M2/M3 芯片 Mac** → [下载 CreatingImage-macos-arm64.pkg](https://github.com/eraft-io/CreatingImage/releases/download/v1.0.0/CreatingImage-macos-arm64.pkg)
 
 ## 系统要求
 
 - **macOS 版本**: 11.0 (Big Sur) 或更高版本
-- **芯片支持**: Apple Silicon (M1/M2/M3) 和 Intel 芯片
+- **芯片支持**: Apple Silicon (M1/M2/M3) 芯片
 - **内存**: 至少 8GB 内存（推荐 16GB）
 - **磁盘空间**: 约 10GB 可用空间（用于模型下载）
 - **网络**: 首次启动需要下载 Python 依赖和 AI 模型
