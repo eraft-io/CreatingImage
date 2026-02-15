@@ -463,13 +463,29 @@ func (a *App) GenerateImage(prompt string) GenerateImageResult {
 	execDir := filepath.Dir(execPath)
 
 	// 尝试多个可能的路径（按优先级排序）
-	possiblePaths := []string{
-		// 生产模式：脚本在 app bundle 的 Resources 目录中
-		filepath.Join(execDir, "..", "Resources", "gen_image.py"),
-		// 开发模式：脚本在项目根目录
-		filepath.Join(execDir, "..", "..", "..", "gen_image.py"),
-		// 备选：脚本在 app 同级目录
-		filepath.Join(execDir, "..", "..", "gen_image.py"),
+	var possiblePaths []string
+
+	if runtime.GOOS == "windows" {
+		// Windows 路径
+		possiblePaths = []string{
+			// 生产模式：脚本在 resources 目录中（与 exe 同级）
+			filepath.Join(execDir, "resources", "gen_image.py"),
+			// 备选：脚本在 exe 同级目录
+			filepath.Join(execDir, "gen_image.py"),
+			// 开发模式
+			filepath.Join(execDir, "..", "..", "..", "gen_image.py"),
+			filepath.Join(execDir, "..", "..", "gen_image.py"),
+		}
+	} else {
+		// macOS/Linux 路径
+		possiblePaths = []string{
+			// 生产模式：脚本在 app bundle 的 Resources 目录中
+			filepath.Join(execDir, "..", "Resources", "gen_image.py"),
+			// 开发模式：脚本在项目根目录
+			filepath.Join(execDir, "..", "..", "..", "gen_image.py"),
+			// 备选：脚本在 app 同级目录
+			filepath.Join(execDir, "..", "..", "gen_image.py"),
+		}
 	}
 
 	scriptPath := ""

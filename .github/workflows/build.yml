@@ -1,0 +1,82 @@
+name: Build Wails App
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Install Wails
+      run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+    
+    - name: Build macOS app
+      working-directory: ./wails-image-app
+      run: |
+        export PATH=$PATH:$(go env GOPATH)/bin
+        ./build_pkg.sh
+    
+    - name: Upload macOS artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: macos-app
+        path: wails-image-app/build/bin/*.pkg
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.21'
+    
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+    
+    - name: Install Wails
+      run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+    
+    - name: Build Windows app
+      working-directory: ./wails-image-app
+      run: |
+        $env:PATH += ";$(go env GOPATH)\bin"
+        wails build -platform windows/amd64
+    
+    - name: Copy resources
+      working-directory: ./wails-image-app
+      run: |
+        $windowsDir = "build/bin/windows"
+        New-Item -ItemType Directory -Force -Path $windowsDir
+        Copy-Item "build/bin/CreatingImage.exe" $windowsDir/
+        Copy-Item "../gen_image.py" $windowsDir/
+        Copy-Item "python/requirements.txt" $windowsDir/
+    
+    - name: Create ZIP
+      working-directory: ./wails-image-app/build/bin
+      run: Compress-Archive -Path windows -DestinationPath CreatingImage-windows.zip
+    
+    - name: Upload Windows artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: windows-app
+        path: wails-image-app/build/bin/CreatingImage-windows.zip
