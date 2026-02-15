@@ -365,7 +365,7 @@ func (a *App) setupPythonEnvironment() {
 		a.sendLog("[1/8] 安装 PyTorch (CUDA 版本)...", "info")
 		a.sendLog("正在从 PyTorch 官方仓库下载 CUDA 版本...", "info")
 		// 从 PyTorch 官方 CUDA 仓库下载，使用实时输出显示进度
-		cmd := exec.Command(pipCmd, "install", "torch==2.2.2+cu121", "torchvision==0.17.2+cu121",
+		cmd := exec.Command(pipCmd, "install", "torch", "torchvision", "torchaudio",
 			"--index-url", "https://download.pytorch.org/whl/cu121",
 			"--trusted-host", "download.pytorch.org")
 
