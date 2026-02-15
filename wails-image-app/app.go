@@ -331,7 +331,13 @@ func (a *App) setupPythonEnvironment() {
 	if runtime.GOOS == "windows" && useCUDA {
 		// Windows + NVIDIA GPU: 安装 CUDA 版本 PyTorch
 		a.sendLog("[1/8] 安装 PyTorch (CUDA 版本)...", "info")
-		cmd := exec.Command(pipCmd, "install", "torch==2.2.2+cu121", "torchvision==0.17.2+cu121", "--index-url", "https://download.pytorch.org/whl/cu121")
+		a.sendLog("正在使用国内镜像源加速下载...", "info")
+		// 使用清华镜像源加速下载
+		cmd := exec.Command(pipCmd, "install", "torch==2.2.2+cu121", "torchvision==0.17.2+cu121",
+			"--index-url", "https://pypi.tuna.tsinghua.edu.cn/simple",
+			"--extra-index-url", "https://download.pytorch.org/whl/cu121",
+			"--trusted-host", "pypi.tuna.tsinghua.edu.cn",
+			"--trusted-host", "download.pytorch.org")
 		output, err := cmd.CombinedOutput()
 		if err != nil {
 			a.sendLog(fmt.Sprintf("安装 CUDA 版本 PyTorch 失败: %v\n%s", err, output), "error")
@@ -345,7 +351,10 @@ func (a *App) setupPythonEnvironment() {
 	if runtime.GOOS != "windows" || !useCUDA {
 		// macOS/Linux 或 Windows 无 GPU: 安装普通版本
 		a.sendLog("[1/8] 安装 PyTorch...", "info")
-		cmd := exec.Command(pipCmd, "install", "torch>=2.0.0")
+		// 使用清华镜像源
+		cmd := exec.Command(pipCmd, "install", "torch>=2.0.0",
+			"--index-url", "https://pypi.tuna.tsinghua.edu.cn/simple",
+			"--trusted-host", "pypi.tuna.tsinghua.edu.cn")
 		output, _ := cmd.CombinedOutput()
 		a.sendLog("PyTorch 安装完成", "info")
 		if len(output) > 0 {
@@ -366,8 +375,10 @@ func (a *App) setupPythonEnvironment() {
 	for i, dep := range deps {
 		a.sendLog(fmt.Sprintf("[%d/%d] 开始安装 %s...", i+2, len(deps)+1, dep), "info")
 
-		// 使用实时输出
-		cmd := exec.Command(pipCmd, "install", dep)
+		// 使用实时输出，使用清华镜像源
+		cmd := exec.Command(pipCmd, "install", dep,
+			"--index-url", "https://pypi.tuna.tsinghua.edu.cn/simple",
+			"--trusted-host", "pypi.tuna.tsinghua.edu.cn")
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {
 			a.sendLog(fmt.Sprintf("创建输出管道失败: %v", err), "error")
