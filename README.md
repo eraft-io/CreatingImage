@@ -63,6 +63,10 @@ winget install Microsoft.VisualStudio.2022.BuildTools --override "--wait --passi
 
 ## 应用演示
 
+### 示例图片，提示词 - tian an men square in cartoon.
+
+<img src="resources/demo002.png" width="600" alt="macOS 版本演示">
+
 ### macOS 版本
 
 <img src="resources/demo001.png" width="600" alt="macOS 版本演示">
