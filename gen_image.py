@@ -1,9 +1,17 @@
+# -*- coding: utf-8 -*-
+
 from diffusers import StableDiffusionXLPipeline
 import torch
 import os
 import sys
 import argparse
 import time
+
+# ===================== 设置 UTF-8 编码（Windows 兼容） =====================
+if sys.platform == 'win32':
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 # ===================== 命令行参数解析 =====================
 parser = argparse.ArgumentParser(description='Generate image using Stable Diffusion XL')
