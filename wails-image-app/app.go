@@ -376,6 +376,11 @@ func (a *App) setupPythonEnvironment() {
 		} else {
 			stderr, _ := cmd.StderrPipe()
 
+			// Windows 设置 UTF-8 编码环境变量
+			if runtime.GOOS == "windows" {
+				cmd.Env = append(os.Environ(), "PYTHONIOENCODING=utf-8", "CHCP=65001")
+			}
+
 			if err := cmd.Start(); err != nil {
 				a.sendLog(fmt.Sprintf("启动安装失败: %v", err), "error")
 				useCUDA = false
@@ -438,6 +443,12 @@ func (a *App) setupPythonEnvironment() {
 		cmd := exec.Command(pipCmd, "install", dep,
 			"--index-url", "https://pypi.tuna.tsinghua.edu.cn/simple",
 			"--trusted-host", "pypi.tuna.tsinghua.edu.cn")
+
+		// Windows 设置 UTF-8 编码环境变量
+		if runtime.GOOS == "windows" {
+			cmd.Env = append(os.Environ(), "PYTHONIOENCODING=utf-8", "CHCP=65001")
+		}
+
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {
 			a.sendLog(fmt.Sprintf("创建输出管道失败: %v", err), "error")
