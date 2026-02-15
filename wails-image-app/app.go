@@ -156,20 +156,37 @@ func (a *App) setupPythonEnvironment() {
 	// 用户可写的 Python 目录（运行时实际使用）
 	venvDir := filepath.Join(userPythonDir, "venv")
 
+	// Windows 使用 Scripts/python.exe，其他平台使用 bin/python3
+	var venvPython string
+	if runtime.GOOS == "windows" {
+		venvPython = filepath.Join(venvDir, "Scripts", "python.exe")
+	} else {
+		venvPython = filepath.Join(venvDir, "bin", "python3")
+	}
+
 	a.sendLog(fmt.Sprintf("应用资源目录: %s", resourcesDir), "info")
 	a.sendLog(fmt.Sprintf("用户 Python 目录: %s", userPythonDir), "info")
 	a.sendLog(fmt.Sprintf("虚拟环境目录: %s", venvDir), "info")
 
 	// 检查系统 Python3
-	python3Path, err := exec.LookPath("python3")
+	var python3Path string
+
+	if runtime.GOOS == "windows" {
+		// Windows 上尝试 python 和 python3
+		python3Path, err = exec.LookPath("python")
+		if err != nil {
+			python3Path, err = exec.LookPath("python3")
+		}
+	} else {
+		python3Path, err = exec.LookPath("python3")
+	}
+
 	if err != nil {
 		a.sendLog("错误: 未找到系统 Python3，请先安装 Python3", "error")
 		return
 	}
 	a.sendLog(fmt.Sprintf("找到系统 Python3: %s", python3Path), "info")
 
-	// 检查用户虚拟环境是否已存在且可用
-	venvPython := filepath.Join(venvDir, "bin", "python3")
 	if _, err := os.Stat(venvPython); err == nil {
 		a.sendLog("检查现有虚拟环境...", "info")
 		if a.checkDependencies(venvPython) {
