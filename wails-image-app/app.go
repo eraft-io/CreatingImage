@@ -312,13 +312,16 @@ func (a *App) setupPythonEnvironment() {
 	var useCUDA bool
 	if runtime.GOOS == "windows" {
 		a.sendLog("检测 GPU 设备...", "info")
-		// 使用 wmic 检测 NVIDIA GPU
-		cmd := exec.Command("wmic", "path", "win32_VideoController", "get", "name")
+		// 使用 PowerShell 检测 NVIDIA GPU（兼容 Windows 10/11）
+		cmd := exec.Command("powershell", "-Command", "Get-WmiObject Win32_VideoController | Select-Object -ExpandProperty Name")
 		output, err := cmd.Output()
 		if err == nil && strings.Contains(strings.ToLower(string(output)), "nvidia") {
 			a.sendLog("检测到 NVIDIA GPU，将安装 CUDA 版本 PyTorch", "info")
 			useCUDA = true
 		} else {
+			if err != nil {
+				a.sendLog(fmt.Sprintf("GPU 检测命令执行失败: %v", err), "warning")
+			}
 			a.sendLog("未检测到 NVIDIA GPU，将安装 CPU 版本 PyTorch", "info")
 			useCUDA = false
 		}
