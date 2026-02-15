@@ -308,9 +308,50 @@ func (a *App) setupPythonEnvironment() {
 		a.sendLog(string(output), "info")
 	}
 
+	// 检测 Windows 是否有 NVIDIA GPU
+	var useCUDA bool
+	if runtime.GOOS == "windows" {
+		a.sendLog("检测 GPU 设备...", "info")
+		// 使用 wmic 检测 NVIDIA GPU
+		cmd := exec.Command("wmic", "path", "win32_VideoController", "get", "name")
+		output, err := cmd.Output()
+		if err == nil && strings.Contains(strings.ToLower(string(output)), "nvidia") {
+			a.sendLog("检测到 NVIDIA GPU，将安装 CUDA 版本 PyTorch", "info")
+			useCUDA = true
+		} else {
+			a.sendLog("未检测到 NVIDIA GPU，将安装 CPU 版本 PyTorch", "info")
+			useCUDA = false
+		}
+	}
+
 	// 安装依赖
+	if runtime.GOOS == "windows" && useCUDA {
+		// Windows + NVIDIA GPU: 安装 CUDA 版本 PyTorch
+		a.sendLog("[1/8] 安装 PyTorch (CUDA 版本)...", "info")
+		cmd := exec.Command(pipCmd, "install", "torch==2.2.2+cu121", "torchvision==0.17.2+cu121", "--index-url", "https://download.pytorch.org/whl/cu121")
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			a.sendLog(fmt.Sprintf("安装 CUDA 版本 PyTorch 失败: %v\n%s", err, output), "error")
+			a.sendLog("尝试安装 CPU 版本...", "warning")
+			useCUDA = false
+		} else {
+			a.sendLog("PyTorch (CUDA 版本) 安装成功", "info")
+		}
+	}
+
+	if runtime.GOOS != "windows" || !useCUDA {
+		// macOS/Linux 或 Windows 无 GPU: 安装普通版本
+		a.sendLog("[1/8] 安装 PyTorch...", "info")
+		cmd := exec.Command(pipCmd, "install", "torch>=2.0.0")
+		output, _ := cmd.CombinedOutput()
+		a.sendLog("PyTorch 安装完成", "info")
+		if len(output) > 0 {
+			a.sendLog(string(output), "info")
+		}
+	}
+
+	// 安装其他依赖
 	deps := []string{
-		"torch>=2.0.0",
 		"transformers>=4.30.0",
 		"diffusers>=0.21.0",
 		"accelerate>=0.20.0",
@@ -320,7 +361,7 @@ func (a *App) setupPythonEnvironment() {
 	}
 
 	for i, dep := range deps {
-		a.sendLog(fmt.Sprintf("[%d/%d] 开始安装 %s...", i+1, len(deps), dep), "info")
+		a.sendLog(fmt.Sprintf("[%d/%d] 开始安装 %s...", i+2, len(deps)+1, dep), "info")
 
 		// 使用实时输出
 		cmd := exec.Command(pipCmd, "install", dep)

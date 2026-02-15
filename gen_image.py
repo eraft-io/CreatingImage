@@ -104,13 +104,28 @@ print(f'[初始化] 模型路径: {LOCAL_MODEL_PATH}', flush=True)
 
 # ===================== 设备适配（兼容 CUDA/CPU/MPS） =====================
 # 优先使用 MPS（M 芯片）→ CUDA → CPU
+print(f'[初始化] 检查可用设备...', flush=True)
+print(f'[初始化] PyTorch 版本: {torch.__version__}', flush=True)
+print(f'[初始化] CUDA 是否可用: {torch.cuda.is_available()}', flush=True)
+if torch.cuda.is_available():
+    print(f'[初始化] CUDA 版本: {torch.version.cuda}', flush=True)
+    print(f'[初始化] GPU 数量: {torch.cuda.device_count()}', flush=True)
+    for i in range(torch.cuda.device_count()):
+        print(f'[初始化] GPU {i}: {torch.cuda.get_device_name(i)}', flush=True)
+print(f'[初始化] MPS 是否可用: {torch.backends.mps.is_available()}', flush=True)
+
 if torch.backends.mps.is_available():
     device = 'mps'
+    print(f'[初始化] 使用设备: MPS (Apple Silicon)', flush=True)
 elif torch.cuda.is_available():
     device = 'cuda'
+    print(f'[初始化] 使用设备: CUDA (NVIDIA GPU)', flush=True)
 else:
     device = 'cpu'
-print(f'[初始化] 使用设备: {device}', flush=True)
+    print(f'[初始化] 使用设备: CPU (无 GPU 加速)', flush=True)
+    print(f'[警告] 未检测到 GPU 加速，将使用 CPU 运行', flush=True)
+    print(f'[提示] 如需使用 NVIDIA GPU 加速，请安装 CUDA 版本的 PyTorch:', flush=True)
+    print(f'       pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121', flush=True)
 
 # ===================== 加载本地模型 =====================
 print(f'[模型加载] 开始加载模型...', flush=True)

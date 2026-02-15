@@ -91,6 +91,12 @@ if [ -f "python/requirements.txt" ]; then
     echo "      ✓ requirements.txt"
 fi
 
+# 复制 Windows CUDA 版本 requirements
+if [ -f "python/requirements-windows-cuda.txt" ]; then
+    cp python/requirements-windows-cuda.txt "${WINDOWS_DIR}/"
+    echo "      ✓ requirements-windows-cuda.txt (CUDA 版本依赖)"
+fi
+
 # 复制图标
 if [ -f "imgs/logo.png" ]; then
     cp "imgs/logo.png" "${WINDOWS_DIR}/"
@@ -133,7 +139,11 @@ echo ""
 echo "注意："
 echo "1. Windows 版本不包含预装的 Python 依赖"
 echo "2. 用户需要自行安装 Python 3.10+"
-echo "3. 首次启动时会自动安装依赖"
+echo "3. 首次启动时会自动安装依赖（CPU 版本）"
+echo ""
+echo "GPU 加速（可选）："
+echo "如需使用 NVIDIA GPU 加速，请手动安装 CUDA 版本："
+echo "  pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121"
 echo ""
 echo "使用说明："
 echo "1. 解压 ZIP 文件到任意目录"
