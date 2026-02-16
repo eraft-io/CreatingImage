@@ -28,6 +28,7 @@ class ProgressTracker:
         self.total_steps = total_steps
         self.current_step = 0
         self.start_time = time.time()
+        self.last_print_time = 0
         
     def on_step_end(self, pipe, step_index, timestep, callback_kwargs):
         self.current_step = step_index + 1
@@ -35,7 +36,12 @@ class ProgressTracker:
         elapsed = time.time() - self.start_time
         eta = (elapsed / self.current_step) * (self.total_steps - self.current_step) if self.current_step > 0 else 0
         
-        print(f'[生成进度] 步骤 {self.current_step}/{self.total_steps} ({progress:.1f}%) - 已用时间: {elapsed:.1f}s - 预计剩余: {eta:.1f}s', flush=True)
+        # 限制打印频率，避免 Windows 上输出阻塞
+        current_time = time.time()
+        if current_time - self.last_print_time >= 0.5 or self.current_step == self.total_steps:
+            print(f'[生成进度] 步骤 {self.current_step}/{self.total_steps} ({progress:.1f}%) - 已用时间: {elapsed:.1f}s - 预计剩余: {eta:.1f}s', flush=True)
+            self.last_print_time = current_time
+        
         return callback_kwargs
 
 # ===================== 模型下载函数 =====================
@@ -170,19 +176,27 @@ print(f'[生成] 提示词: {args.prompt}', flush=True)
 print(f'[生成] 推理步数: {args.steps}', flush=True)
 
 try:
-    # 创建进度追踪器
-    progress_tracker = ProgressTracker(args.steps)
-    
     # 开始生成
     gen_start_time = time.time()
     
-    image = pipe(
-        args.prompt,
-        num_inference_steps=args.steps,
-        guidance_scale=7.5,
-        callback_on_step_end=progress_tracker.on_step_end,
-        callback_on_step_end_tensor_inputs=['latents'],
-    ).images[0]
+    # Windows 上使用简化的进度显示，避免回调阻塞
+    if sys.platform == 'win32':
+        print(f'[生成] 正在生成图片，请稍候...', flush=True)
+        image = pipe(
+            args.prompt,
+            num_inference_steps=args.steps,
+            guidance_scale=7.5,
+        ).images[0]
+    else:
+        # macOS/Linux 使用进度回调
+        progress_tracker = ProgressTracker(args.steps)
+        image = pipe(
+            args.prompt,
+            num_inference_steps=args.steps,
+            guidance_scale=7.5,
+            callback_on_step_end=progress_tracker.on_step_end,
+            callback_on_step_end_tensor_inputs=['latents'],
+        ).images[0]
     
     gen_time = time.time() - gen_start_time
     print(f'[生成] 图片生成完成，耗时: {gen_time:.1f}s', flush=True)
