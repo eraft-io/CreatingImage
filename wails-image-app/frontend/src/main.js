@@ -48,6 +48,30 @@ function clearLog() {
 // 切换日志显示/隐藏
 window.toggleLog = function() {
     logCollapsed = !logCollapsed;
+    const logContent = document.getElementById('log-content');
+    const toggleBtn = document.querySelector('.toggle-log');
+    
+    if (logCollapsed) {
+        logContent.style.display = 'none';
+        toggleBtn.textContent = '展开';
+    } else {
+        logContent.style.display = 'block';
+        toggleBtn.textContent = '收起';
+    }
+}
+
+// 切换高级选项显示/隐藏
+window.toggleAdvancedOptions = function() {
+    const panel = document.getElementById('advanced-panel');
+    const icon = document.getElementById('advanced-toggle-icon');
+    
+    if (panel.classList.contains('hidden')) {
+        panel.classList.remove('hidden');
+        icon.textContent = '▲';
+    } else {
+        panel.classList.add('hidden');
+        icon.textContent = '▼';
+    }
     logContentDiv.classList.toggle('collapsed', logCollapsed);
     const btn = document.querySelector('.toggle-log');
     btn.textContent = logCollapsed ? '展开' : '收起';
@@ -155,8 +179,27 @@ window.generateImage = function () {
     // 显示加载状态
     showLoading();
     
+    // 获取生成参数
+    const steps = parseInt(document.getElementById('steps-input').value) || 20;
+    const guidanceScale = parseFloat(document.getElementById('guidance-scale-input').value) || 7.5;
+    const width = parseInt(document.getElementById('width-input').value) || 1024;
+    const height = parseInt(document.getElementById('height-input').value) || 1024;
+    const seed = parseInt(document.getElementById('seed-input').value) || 0;
+    const optimizeSpeed = document.getElementById('optimize-speed-check').checked;
+    const optimizeMemory = document.getElementById('optimize-memory-check').checked;
+    
+    const options = {
+        steps: steps,
+        guidanceScale: guidanceScale,
+        width: width,
+        height: height,
+        seed: seed,
+        optimizeSpeed: optimizeSpeed,
+        optimizeMemory: optimizeMemory
+    };
+    
     // 调用 Go 后端生成图片
-    GenerateImage(prompt)
+    GenerateImage(prompt, options)
         .then((result) => {
             if (result.success) {
                 showResult(result.imagePath);

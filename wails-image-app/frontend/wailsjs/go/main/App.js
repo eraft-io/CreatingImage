@@ -6,8 +6,8 @@ export function CheckPythonEnvironment() {
   return window['go']['main']['App']['CheckPythonEnvironment']();
 }
 
-export function GenerateImage(arg1) {
-  return window['go']['main']['App']['GenerateImage'](arg1);
+export function GenerateImage(arg1, arg2) {
+  return window['go']['main']['App']['GenerateImage'](arg1, arg2);
 }
 
 export function GetImageData(arg1) {

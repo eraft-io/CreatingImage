@@ -18,8 +18,14 @@ parser = argparse.ArgumentParser(description='Generate image using Stable Diffus
 parser.add_argument('prompt', type=str, help='Text prompt for image generation')
 parser.add_argument('--output', type=str, default='sdxl_output.png', help='Output image path')
 parser.add_argument('--model-path', type=str, default=None, help='Path to local model')
-parser.add_argument('--steps', type=int, default=20, help='Number of inference steps')
+parser.add_argument('--steps', type=int, default=20, help='Number of inference steps (default: 20, lower=faster)')
 parser.add_argument('--cache-dir', type=str, default=None, help='Model cache directory')
+parser.add_argument('--guidance-scale', type=float, default=7.5, help='Guidance scale (default: 7.5, lower=faster)')
+parser.add_argument('--width', type=int, default=1024, help='Image width (default: 1024)')
+parser.add_argument('--height', type=int, default=1024, help='Image height (default: 1024)')
+parser.add_argument('--seed', type=int, default=None, help='Random seed for reproducible results')
+parser.add_argument('--optimize-speed', action='store_true', help='Enable speed optimization (may use more memory)')
+parser.add_argument('--optimize-memory', action='store_true', help='Enable memory optimization (slower but less memory)')
 args = parser.parse_args()
 
 # ===================== 进度回调函数 =====================
@@ -162,9 +168,20 @@ except Exception as e:
     print(f'ERROR: 模型加载失败：{str(e)}', file=sys.stderr, flush=True)
     sys.exit(1)
 
-# ===================== 内存优化（可选） =====================
-# M 芯片/低显存设备开启 CPU 分块加载，减少内存占用
-if device in ['mps', 'cpu']:
+# ===================== 内存/速度优化 =====================
+if args.optimize_speed and device == 'cuda':
+    # 速度优化：启用 VAE 切片和 SDPA 注意力（CUDA  only）
+    print(f'[优化] 启用速度优化...', flush=True)
+    pipe.vae.enable_slicing()
+    # 使用 torch.compile 加速（PyTorch 2.0+）
+    try:
+        pipe.unet = torch.compile(pipe.unet, mode="reduce-overhead", fullgraph=False)
+        print(f'[优化] torch.compile 已启用', flush=True)
+    except Exception as e:
+        print(f'[优化] torch.compile 不可用: {e}', flush=True)
+    print(f'[优化] 速度优化完成', flush=True)
+elif args.optimize_memory or device in ['mps', 'cpu']:
+    # 内存优化：启用 CPU 分块加载，减少内存占用
     print(f'[优化] 启用内存优化...', flush=True)
     pipe.enable_sequential_cpu_offload()
     pipe.vae.enable_slicing()  # VAE 分块推理
@@ -173,30 +190,41 @@ if device in ['mps', 'cpu']:
 # ===================== 生成图片 =====================
 print(f'[生成] 开始生成图片', flush=True)
 print(f'[生成] 提示词: {args.prompt}', flush=True)
-print(f'[生成] 推理步数: {args.steps}', flush=True)
+print(f'[生成] 尺寸: {args.width}x{args.height}, 步数: {args.steps}, 引导系数: {args.guidance_scale}', flush=True)
+
+# 设置随机种子（如果指定）
+if args.seed is not None:
+    import torch
+    generator = torch.Generator(device=device).manual_seed(args.seed)
+    print(f'[生成] 使用随机种子: {args.seed}', flush=True)
+else:
+    generator = None
 
 try:
     # 开始生成
     gen_start_time = time.time()
     
+    # 构建生成参数
+    gen_kwargs = {
+        'prompt': args.prompt,
+        'num_inference_steps': args.steps,
+        'guidance_scale': args.guidance_scale,
+        'width': args.width,
+        'height': args.height,
+    }
+    if generator is not None:
+        gen_kwargs['generator'] = generator
+    
     # Windows 上使用简化的进度显示，避免回调阻塞
     if sys.platform == 'win32':
         print(f'[生成] 正在生成图片，请稍候...', flush=True)
-        image = pipe(
-            args.prompt,
-            num_inference_steps=args.steps,
-            guidance_scale=7.5,
-        ).images[0]
+        image = pipe(**gen_kwargs).images[0]
     else:
         # macOS/Linux 使用进度回调
         progress_tracker = ProgressTracker(args.steps)
-        image = pipe(
-            args.prompt,
-            num_inference_steps=args.steps,
-            guidance_scale=7.5,
-            callback_on_step_end=progress_tracker.on_step_end,
-            callback_on_step_end_tensor_inputs=['latents'],
-        ).images[0]
+        gen_kwargs['callback_on_step_end'] = progress_tracker.on_step_end
+        gen_kwargs['callback_on_step_end_tensor_inputs'] = ['latents']
+        image = pipe(**gen_kwargs).images[0]
     
     gen_time = time.time() - gen_start_time
     print(f'[生成] 图片生成完成，耗时: {gen_time:.1f}s', flush=True)

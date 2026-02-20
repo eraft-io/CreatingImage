@@ -543,6 +543,17 @@ except Exception as e:
 	return allOK
 }
 
+// GenerateImageOptions 图片生成选项
+type GenerateImageOptions struct {
+	Steps          int     `json:"steps"`
+	GuidanceScale  float64 `json:"guidanceScale"`
+	Width          int     `json:"width"`
+	Height         int     `json:"height"`
+	Seed           int     `json:"seed"`
+	OptimizeSpeed  bool    `json:"optimizeSpeed"`
+	OptimizeMemory bool    `json:"optimizeMemory"`
+}
+
 // GenerateImageResult 图片生成结果
 type GenerateImageResult struct {
 	Success   bool   `json:"success"`
@@ -551,7 +562,7 @@ type GenerateImageResult struct {
 }
 
 // GenerateImage 调用 Python 脚本生成图片
-func (a *App) GenerateImage(prompt string) GenerateImageResult {
+func (a *App) GenerateImage(prompt string, options GenerateImageOptions) GenerateImageResult {
 	// 检查 Python 环境是否就绪
 	a.pythonMutex.Lock()
 	if !a.pythonReady {
@@ -651,7 +662,30 @@ func (a *App) GenerateImage(prompt string) GenerateImageResult {
 		homeDir, _ := os.UserHomeDir()
 		cacheDir = filepath.Join(homeDir, ".cache", "CreatingImage", "models")
 	}
-	cmd := exec.Command(pythonPath, scriptPath, prompt, "--output", outputFile, "--steps", "20", "--cache-dir", cacheDir)
+	// 构建命令参数
+	cmdArgs := []string{
+		scriptPath,
+		prompt,
+		"--output", outputFile,
+		"--steps", fmt.Sprintf("%d", options.Steps),
+		"--guidance-scale", fmt.Sprintf("%.1f", options.GuidanceScale),
+		"--width", fmt.Sprintf("%d", options.Width),
+		"--height", fmt.Sprintf("%d", options.Height),
+		"--cache-dir", cacheDir,
+	}
+
+	// 添加可选参数
+	if options.Seed != 0 {
+		cmdArgs = append(cmdArgs, "--seed", fmt.Sprintf("%d", options.Seed))
+	}
+	if options.OptimizeSpeed {
+		cmdArgs = append(cmdArgs, "--optimize-speed")
+	}
+	if options.OptimizeMemory {
+		cmdArgs = append(cmdArgs, "--optimize-memory")
+	}
+
+	cmd := exec.Command(pythonPath, cmdArgs...)
 
 	// 捕获输出
 	stdout, err := cmd.StdoutPipe()

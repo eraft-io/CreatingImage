@@ -199,10 +199,14 @@ fi
 echo "      目标架构: ${TARGET_ARCH}"
 
 if [ "${TARGET_ARCH}" = "arm64" ]; then
-    # M 芯片 Mac
+    # M 芯片 Mac - 使用 pip 默认源（PyPI 有 ARM64 版本）
     echo "      安装 M 芯片兼容的 torch..."
     "${PIP_CMD}" install \
         "torch>=2.0.0" \
+        "torchvision>=0.15.0" \
+        --quiet
+    
+    "${PIP_CMD}" install \
         "transformers>=4.30.0" \
         "diffusers>=0.21.0" \
         "accelerate>=0.20.0" \

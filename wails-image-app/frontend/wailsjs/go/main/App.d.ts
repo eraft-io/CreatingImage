@@ -4,7 +4,7 @@ import {main} from '../models';
 
 export function CheckPythonEnvironment():Promise<main.CheckPythonStatus>;
 
-export function GenerateImage(arg1:string):Promise<main.GenerateImageResult>;
+export function GenerateImage(arg1:string,arg2:main.GenerateImageOptions):Promise<main.GenerateImageResult>;
 
 export function GetImageData(arg1:string):Promise<string>;
 

@@ -14,6 +14,30 @@ export namespace main {
 	        this.message = source["message"];
 	    }
 	}
+	export class GenerateImageOptions {
+	    steps: number;
+	    guidanceScale: number;
+	    width: number;
+	    height: number;
+	    seed: number;
+	    optimizeSpeed: boolean;
+	    optimizeMemory: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new GenerateImageOptions(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.steps = source["steps"];
+	        this.guidanceScale = source["guidanceScale"];
+	        this.width = source["width"];
+	        this.height = source["height"];
+	        this.seed = source["seed"];
+	        this.optimizeSpeed = source["optimizeSpeed"];
+	        this.optimizeMemory = source["optimizeMemory"];
+	    }
+	}
 	export class GenerateImageResult {
 	    success: boolean;
 	    imagePath: string;
